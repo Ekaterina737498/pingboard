@@ -9,6 +9,7 @@ import { HealthResolver } from './health.resolver';
 import { PrismaModule } from './prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { SitesModule } from './sites/sites.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UsersModule } from './users/users.module';
     PrismaModule,
     AuthModule,
     UsersModule,
+    SitesModule,
   ],
   controllers: [AppController],
   providers: [AppService, HealthResolver],
