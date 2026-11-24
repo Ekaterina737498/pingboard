@@ -8,3 +8,4 @@ skills-lock.json
 
 *.tsbuildinfo
 /src/generated/prisma
+/src/schema.gql
