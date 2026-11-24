@@ -12,5 +12,8 @@ export class UserModel {
   role!: string;
 
   @Field()
+  isBlocked!: boolean;
+
+  @Field()
   createdAt!: Date;
 }
