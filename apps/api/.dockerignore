@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.env
+*.tsbuildinfo
+src/generated
+.agents
+.claude
+.windsurf
