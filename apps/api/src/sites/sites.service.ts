@@ -43,4 +43,27 @@ export class SitesService {
     await this.get(ownerId, id);
     return this.prisma.site.delete({ where: { id } });
   }
+
+  async recentChecks(ownerId: string, siteId: string, limit: number) {
+    await this.get(ownerId, siteId);
+    return this.prisma.check.findMany({
+      where: { siteId },
+      orderBy: { checkedAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 200),
+    });
+  }
+
+  async uptime24h(ownerId: string, siteId: string): Promise<number | null> {
+    await this.get(ownerId, siteId);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [total, ok] = await Promise.all([
+      this.prisma.check.count({
+        where: { siteId, checkedAt: { gte: since } },
+      }),
+      this.prisma.check.count({
+        where: { siteId, checkedAt: { gte: since }, ok: true },
+      }),
+    ]);
+    return total === 0 ? null : Math.round((ok / total) * 1000) / 10;
+  }
 }
