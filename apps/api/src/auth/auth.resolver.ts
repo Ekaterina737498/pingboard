@@ -2,6 +2,7 @@ import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import type { Request, Response } from 'express';
 import { PrismaService } from '../prisma.service';
+import { RateLimitService } from '../redis/rate-limit.service';
 import { AuthPayload } from './auth-payload.model';
 import { AuthService } from './auth.service';
 import { CurrentUser, type JwtPayload } from './current-user.decorator';
@@ -17,21 +18,37 @@ import { UserModel } from './user.model';
 
 type GqlContext = { req: Request; res: Response };
 
+const LOGIN_WINDOW_SECONDS = 15 * 60;
+const REGISTER_WINDOW_SECONDS = 60 * 60;
+
 @Resolver()
 export class AuthResolver {
   constructor(
     private readonly authService: AuthService,
     private readonly prisma: PrismaService,
+    private readonly rateLimit: RateLimitService,
   ) {}
 
   @Mutation(() => UserModel)
-  register(@Args('input') input: RegisterInput) {
+  async register(
+    @Args('input') input: RegisterInput,
+    @Context() ctx: GqlContext,
+  ) {
+    const ip = ctx.req.ip ?? 'unknown';
+    await this.rateLimit.hit(`rl:register:${ip}`, 5, REGISTER_WINDOW_SECONDS);
     return this.authService.register(input);
   }
 
   @Mutation(() => AuthPayload)
   async login(@Args('input') input: LoginInput, @Context() ctx: GqlContext) {
+    const ip = ctx.req.ip ?? 'unknown';
+    const accountKey = `rl:login:${ip}:${input.email}`;
+
+    await this.rateLimit.hit(`rl:login-ip:${ip}`, 30, LOGIN_WINDOW_SECONDS);
+    await this.rateLimit.hit(accountKey, 5, LOGIN_WINDOW_SECONDS);
+
     const { accessToken, refreshToken } = await this.authService.login(input);
+    await this.rateLimit.reset(accountKey);
     setRefreshCookie(ctx.res, refreshToken);
     return { accessToken };
   }
