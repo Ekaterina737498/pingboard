@@ -30,7 +30,7 @@ export class UsersResolver {
     }
     return this.prisma.user.update({
       where: { id: userId },
-      data: { isBlocked },
+      data: { isBlocked, ...(isBlocked ? { refreshTokenHash: null } : {}) },
     });
   }
 }
