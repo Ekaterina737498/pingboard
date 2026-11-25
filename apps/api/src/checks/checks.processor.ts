@@ -8,12 +8,14 @@ import {
   SITE_CHECKS_QUEUE,
 } from './checks.constants';
 import { SiteCheckerService } from './site-checker.service';
+import { LastCheckCache } from '../redis/last-check.cache';
 
 @Processor(SITE_CHECKS_QUEUE, { concurrency: 5 })
 export class ChecksProcessor extends WorkerHost {
   constructor(
     private readonly prisma: PrismaService,
     private readonly checker: SiteCheckerService,
+    private readonly lastCheckCache: LastCheckCache,
     @InjectQueue(SITE_CHECKS_QUEUE) private readonly queue: Queue,
   ) {
     super();
@@ -48,6 +50,9 @@ export class ChecksProcessor extends WorkerHost {
     const site = await this.prisma.site.findUnique({ where: { id: siteId } });
     if (!site || !site.isActive) return;
     const result = await this.checker.check(site.url);
-    await this.prisma.check.create({ data: { siteId, ...result } });
+    const check = await this.prisma.check.create({
+      data: { siteId, ...result },
+    });
+    await this.lastCheckCache.set(siteId, check);
   }
 }

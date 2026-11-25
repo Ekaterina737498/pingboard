@@ -5,12 +5,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { AddSiteInput } from './add-site.input';
+import { LastCheckCache } from '../redis/last-check.cache';
 
 export const MAX_SITES_PER_USER = 10;
 
 @Injectable()
 export class SitesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly lastCheckCache: LastCheckCache,
+  ) {}
 
   async add(ownerId: string, input: AddSiteInput) {
     const count = await this.prisma.site.count({ where: { ownerId } });
@@ -41,7 +45,9 @@ export class SitesService {
 
   async remove(ownerId: string, id: string) {
     await this.get(ownerId, id);
-    return this.prisma.site.delete({ where: { id } });
+    const removed = await this.prisma.site.delete({ where: { id } });
+    await this.lastCheckCache.clear(id);
+    return removed;
   }
 
   async recentChecks(ownerId: string, siteId: string, limit: number) {
