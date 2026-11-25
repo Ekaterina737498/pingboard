@@ -7,3 +7,4 @@ process.env.REDIS_URL =
   process.env.TEST_REDIS_URL ?? 'redis://localhost:6379/1';
 process.env.JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET ?? 'test-refresh-secret';
+process.env.RATE_LIMIT_ENABLED = 'false';
