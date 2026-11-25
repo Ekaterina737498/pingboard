@@ -12,6 +12,7 @@ import { UsersModule } from './users/users.module';
 import { SitesModule } from './sites/sites.module';
 import { BullModule } from '@nestjs/bullmq';
 import { ChecksModule } from './checks/checks.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ChecksModule } from './checks/checks.module';
       },
     }),
     ChecksModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService, HealthResolver],
