@@ -23,9 +23,9 @@ describe('RolesGuard', () => {
 
   it('allows an admin to reach an admin-only handler', () => {
     reflectorMock.getAllAndOverride.mockReturnValue(['ADMIN']);
-    expect(
-      guard.canActivate(makeContext({ sub: '1', role: 'ADMIN' })),
-    ).toBe(true);
+    expect(guard.canActivate(makeContext({ sub: '1', role: 'ADMIN' }))).toBe(
+      true,
+    );
   });
 
   it('forbids a regular user from an admin-only handler', () => {
@@ -37,8 +37,6 @@ describe('RolesGuard', () => {
 
   it('forbids a request without a user', () => {
     reflectorMock.getAllAndOverride.mockReturnValue(['ADMIN']);
-    expect(() => guard.canActivate(makeContext())).toThrow(
-      ForbiddenException,
-    );
+    expect(() => guard.canActivate(makeContext())).toThrow(ForbiddenException);
   });
 });
