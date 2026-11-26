@@ -9,9 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@apollo/client": "^4.3.8",
+    "@hookform/resolvers": "^7.0.9",
+    "@reduxjs/toolkit": "^2.15.0",
+    "graphql": "^16.15.0",
     "next": "16.4.6",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "react-hook-form": "^7.92.0",
+    "react-redux": "^9.3.1",
+    "rxjs": "^7.8.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",
