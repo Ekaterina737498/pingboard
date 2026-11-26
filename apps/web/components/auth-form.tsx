@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { motion } from "motion/react";
 import { sessionStarted } from "@/lib/auth-slice";
 import { getErrorMessage } from "@/lib/error-message";
 import { LOGIN, REGISTER } from "@/lib/operations";
@@ -15,6 +16,8 @@ import {
   type AuthFormValues,
 } from "@/lib/schemas";
 import { useAppDispatch } from "@/lib/store";
+import { FormError } from "./form-error";
+import { fadeUp } from "./motion-presets";
 import { TextField } from "./text-field";
 
 const TEXT = {
@@ -73,7 +76,7 @@ export function AuthForm({ mode }: { mode: keyof typeof TEXT }) {
   });
 
   return (
-    <main className="m-auto w-full max-w-sm p-4">
+    <motion.main {...fadeUp} className="m-auto w-full max-w-sm p-4">
       <h1 className="mb-6 text-2xl font-semibold">{text.title}</h1>
 
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
@@ -92,11 +95,7 @@ export function AuthForm({ mode }: { mode: keyof typeof TEXT }) {
           {...register("password")}
         />
 
-        {serverError && (
-          <p role="alert" className="text-sm text-red-600">
-            {serverError}
-          </p>
-        )}
+        {serverError && <FormError role="alert">{serverError}</FormError>}
 
         <button
           type="submit"
@@ -113,6 +112,6 @@ export function AuthForm({ mode }: { mode: keyof typeof TEXT }) {
           {text.link}
         </Link>
       </p>
-    </main>
+    </motion.main>
   );
 }

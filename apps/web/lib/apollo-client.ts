@@ -54,6 +54,9 @@ export function makeApolloClient(store: AppStore) {
       authLink,
       new HttpLink({ uri: "/graphql" }),
     ]),
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({
+      // У LastCheck нет id: новый результат просто заменяет старый.
+      typePolicies: { Site: { fields: { lastCheck: { merge: false } } } },
+    }),
   });
 }

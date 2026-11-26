@@ -5,6 +5,7 @@ import { sessionEnded } from "@/lib/auth-slice";
 import { LOGOUT, ME } from "@/lib/operations";
 import { withAuthLock } from "@/lib/refresh";
 import { useAppDispatch } from "@/lib/store";
+import { SitesSection } from "./sites-section";
 
 export function Dashboard() {
   const dispatch = useAppDispatch();
@@ -52,6 +53,8 @@ export function Dashboard() {
           Вы вошли как <strong>{data.me.email}</strong> ({data.me.role})
         </p>
       )}
+
+      <SitesSection />
     </main>
   );
 }
