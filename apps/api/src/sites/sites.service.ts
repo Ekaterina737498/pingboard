@@ -35,6 +35,15 @@ export class SitesService {
     });
   }
 
+  listAll(limit: number, offset: number) {
+    return this.prisma.site.findMany({
+      include: { owner: true },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 100),
+      skip: Math.max(offset, 0),
+    });
+  }
+
   async get(ownerId: string, id: string) {
     const site = await this.prisma.site.findFirst({ where: { id, ownerId } });
     if (!site) {
