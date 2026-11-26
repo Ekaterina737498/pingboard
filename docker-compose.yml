@@ -25,6 +25,12 @@ services:
       timeout: 5s
       retries: 10
 
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   api:
     profiles: [ "app" ]
     build: ./apps/api
@@ -33,6 +39,8 @@ services:
     environment:
       DATABASE_URL: postgresql://pingboard:pingboard@postgres:5432/pingboard
       REDIS_URL: redis://redis:6379
+      SMTP_URL: ${SMTP_URL:-smtp://mailpit:1025}
+      MAIL_FROM: "${MAIL_FROM:-PingBoard <alerts@pingboard.local>}"
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in the root .env}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env}
     depends_on:
@@ -40,6 +48,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     healthcheck:
       test:
         - CMD
