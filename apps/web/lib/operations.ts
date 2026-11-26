@@ -45,3 +45,58 @@ export const ME: TypedDocumentNode<
     }
   }
 `;
+
+export type Site = {
+  id: string;
+  name: string;
+  url: string;
+  lastCheck: {
+    ok: boolean;
+    statusCode: number | null;
+    responseTimeMs: number | null;
+    error: string | null;
+    checkedAt: string;
+  } | null;
+};
+
+export const SITES: TypedDocumentNode<
+  { sites: Site[] },
+  Record<string, never>
+> = gql`
+  query Sites {
+    sites {
+      id
+      name
+      url
+      lastCheck {
+        ok
+        statusCode
+        responseTimeMs
+        error
+        checkedAt
+      }
+    }
+  }
+`;
+
+export const ADD_SITE: TypedDocumentNode<
+  { addSite: { id: string } },
+  { input: { name: string; url: string } }
+> = gql`
+  mutation AddSite($input: AddSiteInput!) {
+    addSite(input: $input) {
+      id
+    }
+  }
+`;
+
+export const REMOVE_SITE: TypedDocumentNode<
+  { removeSite: { id: string } },
+  { id: string }
+> = gql`
+  mutation RemoveSite($id: String!) {
+    removeSite(id: $id) {
+      id
+    }
+  }
+`;

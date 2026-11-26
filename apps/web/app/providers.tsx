@@ -1,6 +1,7 @@
 "use client";
 
 import { ApolloProvider } from "@apollo/client/react";
+import { MotionConfig } from "motion/react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { makeApolloClient } from "@/lib/apollo-client";
@@ -24,7 +25,10 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <Provider store={store}>
-      <ApolloProvider client={client}>{children}</ApolloProvider>
+      <ApolloProvider client={client}>
+        {/* Учитываем системную настройку «уменьшить движение». */}
+        <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      </ApolloProvider>
     </Provider>
   );
 }
