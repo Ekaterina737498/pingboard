@@ -2,9 +2,10 @@
 
 import { useApolloClient, useMutation, useQuery } from "@apollo/client/react";
 import { sessionEnded } from "@/lib/auth-slice";
-import { LOGOUT, ME } from "@/lib/operations";
+import { LOGOUT, ME, RESEND_VERIFICATION } from "@/lib/operations";
 import { withAuthLock } from "@/lib/refresh";
 import { useAppDispatch } from "@/lib/store";
+import { EmailVerificationBanner } from "./email-verification-banner";
 import { SitesSection } from "./sites-section";
 
 export function Dashboard() {
@@ -12,6 +13,7 @@ export function Dashboard() {
   const client = useApolloClient();
   const { data, loading, error } = useQuery(ME);
   const [logout, logoutState] = useMutation(LOGOUT);
+  const [resendVerification] = useMutation(RESEND_VERIFICATION);
 
   const onLogout = async () => {
     try {
@@ -52,6 +54,14 @@ export function Dashboard() {
         <p className="mt-6">
           Вы вошли как <strong>{data.me.email}</strong> ({data.me.role})
         </p>
+      )}
+
+      {data && !data.me.emailVerifiedAt && (
+        <EmailVerificationBanner
+          onResend={async () => {
+            await resendVerification();
+          }}
+        />
       )}
 
       <SitesSection />

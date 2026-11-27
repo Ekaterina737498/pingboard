@@ -200,6 +200,7 @@ describe('AuthService', () => {
       role: 'USER',
       isBlocked: false,
       googleId: null,
+      emailVerifiedAt: null,
     };
 
     beforeEach(() => jwtMock.signAsync.mockResolvedValue('token'));
@@ -211,11 +212,15 @@ describe('AuthService', () => {
       await service.loginWithGoogle(profile);
 
       expect(prismaMock.user.create).toHaveBeenCalledWith({
-        data: { email: 'a@gmail.com', googleId: 'g-1' },
+        data: {
+          email: 'a@gmail.com',
+          googleId: 'g-1',
+          emailVerifiedAt: expect.any(Date),
+        },
       });
     });
 
-    it('removes the old password when linking an account', async () => {
+    it('removes the password when linking an unverified account', async () => {
       prismaMock.user.findUnique
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(existing);
@@ -225,7 +230,25 @@ describe('AuthService', () => {
 
       expect(prismaMock.user.update).toHaveBeenCalledWith({
         where: { id: '1' },
-        data: { googleId: 'g-1', passwordHash: null },
+        data: {
+          googleId: 'g-1',
+          passwordHash: null,
+          emailVerifiedAt: expect.any(Date),
+        },
+      });
+    });
+
+    it('keeps the password when the email is already verified', async () => {
+      prismaMock.user.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ ...existing, emailVerifiedAt: new Date() });
+      prismaMock.user.update.mockResolvedValue(existing);
+
+      await service.loginWithGoogle(profile);
+
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: { googleId: 'g-1' },
       });
     });
 

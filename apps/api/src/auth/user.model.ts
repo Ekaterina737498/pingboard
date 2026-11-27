@@ -14,6 +14,9 @@ export class UserModel {
   @Field()
   isBlocked!: boolean;
 
+  @Field(() => Date, { nullable: true })
+  emailVerifiedAt?: Date | null;
+
   @Field()
   createdAt!: Date;
 }

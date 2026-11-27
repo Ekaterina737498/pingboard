@@ -86,7 +86,11 @@ export class ChecksProcessor extends WorkerHost {
       where: { id: checkId },
       include: { site: { include: { owner: true } } },
     });
-    if (!check || !check.site.isActive || check.site.owner.isBlocked) return;
+    if (!check || !check.site.isActive) return;
+
+    // На неподтверждённый адрес не пишем: он может принадлежать постороннему.
+    const { owner } = check.site;
+    if (owner.isBlocked || !owner.emailVerifiedAt) return;
 
     await this.mail.sendSiteDown(check.site.owner.email, {
       siteName: check.site.name,

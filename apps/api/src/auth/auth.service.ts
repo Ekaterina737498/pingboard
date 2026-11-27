@@ -64,7 +64,7 @@ export class AuthService {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (!existing) {
       const created = await this.prisma.user.create({
-        data: { email, googleId },
+        data: { email, googleId, emailVerifiedAt: new Date() },
       });
       return this.issueTokens(created);
     }
@@ -73,11 +73,13 @@ export class AuthService {
     if (!authoritative || existing.googleId) {
       throw new ConflictException('Cannot link this Google account');
     }
-    // Email при регистрации не подтверждался: пароль мог задать посторонний.
-    // Поэтому удаляем его, а issueTokens заменяет прежнюю сессию новой.
+    // Если email не подтверждён, пароль мог задать посторонний.
+    // Тогда удаляем его, а issueTokens заменяет прежнюю сессию новой.
     const updated = await this.prisma.user.update({
       where: { id: existing.id },
-      data: { googleId, passwordHash: null },
+      data: existing.emailVerifiedAt
+        ? { googleId }
+        : { googleId, passwordHash: null, emailVerifiedAt: new Date() },
     });
     return this.issueTokens(updated);
   }

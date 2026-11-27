@@ -1,6 +1,7 @@
 import { UseGuards } from '@nestjs/common';
 import { Args, Context, Mutation, Query, Resolver } from '@nestjs/graphql';
 import type { Request, Response } from 'express';
+import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { PrismaService } from '../prisma.service';
 import { RateLimitService } from '../redis/rate-limit.service';
 import { AuthPayload } from './auth-payload.model';
@@ -27,6 +28,7 @@ export class AuthResolver {
     private readonly authService: AuthService,
     private readonly prisma: PrismaService,
     private readonly rateLimit: RateLimitService,
+    private readonly verification: EmailVerificationService,
   ) {}
 
   @Mutation(() => UserModel)
@@ -36,7 +38,9 @@ export class AuthResolver {
   ) {
     const ip = ctx.req.ip ?? 'unknown';
     await this.rateLimit.hit(`rl:register:${ip}`, 5, REGISTER_WINDOW_SECONDS);
-    return this.authService.register(input);
+    const user = await this.authService.register(input);
+    await this.verification.request(user.id);
+    return user;
   }
 
   @Mutation(() => AuthPayload)

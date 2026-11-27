@@ -23,6 +23,21 @@ export class MailService {
       config.get<string>('MAIL_FROM') ?? 'PingBoard <alerts@pingboard.local>';
   }
 
+  async sendEmailVerification(to: string, link: string) {
+    await this.transport.sendMail({
+      from: this.from,
+      to,
+      subject: 'Confirm your email for PingBoard',
+      text: [
+        'Open this link and press the button to confirm your email:',
+        link,
+        '',
+        'The link works once and expires in 24 hours.',
+        'If you did not sign up for PingBoard, ignore this message and do not confirm.',
+      ].join('\n'),
+    });
+  }
+
   async sendSiteDown(to: string, alert: SiteDownAlert) {
     const reason = alert.statusCode
       ? `HTTP status ${alert.statusCode}`
