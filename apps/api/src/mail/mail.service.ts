@@ -10,15 +10,13 @@ export type SiteDownAlert = {
   checkedAt: Date;
 };
 
-const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
-
 type Message = { to: string; subject: string; text: string };
 
 @Injectable()
 export class MailService {
   private readonly transport: ReturnType<typeof createTransport>;
   private readonly from: string;
-  private readonly brevoApiKey: string | undefined;
+  private readonly script: { url: string; secret: string } | undefined;
 
   constructor(config: ConfigService) {
     this.transport = createTransport(
@@ -26,7 +24,14 @@ export class MailService {
     );
     this.from =
       config.get<string>('MAIL_FROM') ?? 'PingBoard <alerts@pingboard.local>';
-    this.brevoApiKey = config.get<string>('BREVO_API_KEY') || undefined;
+    const url = config.get<string>('MAIL_SCRIPT_URL');
+    if (url) {
+      const secret = config.get<string>('MAIL_SCRIPT_SECRET');
+      if (!secret) {
+        throw new Error('MAIL_SCRIPT_SECRET is required with MAIL_SCRIPT_URL');
+      }
+      this.script = { url, secret };
+    }
   }
 
   async sendEmailVerification(to: string, link: string) {
@@ -59,38 +64,33 @@ export class MailService {
     });
   }
 
-  // Локально письма идут по SMTP. На хостинге, где SMTP закрыт, через HTTP API.
+  // Локально письма идут по SMTP. На хостинге, где SMTP закрыт, по HTTPS
+  // через скрипт Google Apps Script (apps/api/mail-script/Code.gs).
   private async send(message: Message) {
-    if (!this.brevoApiKey) {
+    if (!this.script) {
       await this.transport.sendMail({ from: this.from, ...message });
       return;
     }
 
-    const response = await fetch(BREVO_URL, {
+    const response = await fetch(this.script.url, {
       method: 'POST',
-      headers: {
-        'api-key': this.brevoApiKey,
-        'content-type': 'application/json',
-        accept: 'application/json',
-      },
-      body: JSON.stringify({
-        sender: parseSender(this.from),
-        to: [{ email: message.to }],
-        subject: message.subject,
-        textContent: message.text,
-      }),
-      signal: AbortSignal.timeout(10_000),
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ secret: this.script.secret, ...message }),
+      signal: AbortSignal.timeout(20_000),
     });
     if (!response.ok) {
-      throw new Error(`Brevo responded with status ${response.status}`);
+      throw new Error(`Mail script responded with status ${response.status}`);
+    }
+    // Apps Script отвечает 200 и при ошибке, поэтому проверяем тело ответа.
+    // Если доступ настроен неверно, вместо JSON приходит HTML-страница.
+    const result = (await response.json().catch(() => null)) as {
+      ok?: boolean;
+      error?: string;
+    } | null;
+    if (result?.ok !== true) {
+      throw new Error(
+        `Mail script failed: ${result?.error ?? 'invalid response'}`,
+      );
     }
   }
-}
-
-// "PingBoard <a@b.com>" превращается в { name, email }.
-function parseSender(from: string) {
-  const match = from.match(/^(.*)<(.+)>$/);
-  return match
-    ? { name: match[1].trim(), email: match[2].trim() }
-    : { email: from.trim() };
 }
