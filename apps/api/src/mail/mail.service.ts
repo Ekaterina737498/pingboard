@@ -10,10 +10,15 @@ export type SiteDownAlert = {
   checkedAt: Date;
 };
 
+const BREVO_URL = 'https://api.brevo.com/v3/smtp/email';
+
+type Message = { to: string; subject: string; text: string };
+
 @Injectable()
 export class MailService {
   private readonly transport: ReturnType<typeof createTransport>;
   private readonly from: string;
+  private readonly brevoApiKey: string | undefined;
 
   constructor(config: ConfigService) {
     this.transport = createTransport(
@@ -21,11 +26,11 @@ export class MailService {
     );
     this.from =
       config.get<string>('MAIL_FROM') ?? 'PingBoard <alerts@pingboard.local>';
+    this.brevoApiKey = config.get<string>('BREVO_API_KEY') || undefined;
   }
 
   async sendEmailVerification(to: string, link: string) {
-    await this.transport.sendMail({
-      from: this.from,
+    await this.send({
       to,
       subject: 'Confirm your email for PingBoard',
       text: [
@@ -43,8 +48,7 @@ export class MailService {
       ? `HTTP status ${alert.statusCode}`
       : (alert.error ?? 'Unknown error');
 
-    await this.transport.sendMail({
-      from: this.from,
+    await this.send({
       to,
       subject: `Site is down: ${alert.siteName}`,
       text: [
@@ -54,4 +58,39 @@ export class MailService {
       ].join('\n'),
     });
   }
+
+  // Локально письма идут по SMTP. На хостинге, где SMTP закрыт, через HTTP API.
+  private async send(message: Message) {
+    if (!this.brevoApiKey) {
+      await this.transport.sendMail({ from: this.from, ...message });
+      return;
+    }
+
+    const response = await fetch(BREVO_URL, {
+      method: 'POST',
+      headers: {
+        'api-key': this.brevoApiKey,
+        'content-type': 'application/json',
+        accept: 'application/json',
+      },
+      body: JSON.stringify({
+        sender: parseSender(this.from),
+        to: [{ email: message.to }],
+        subject: message.subject,
+        textContent: message.text,
+      }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!response.ok) {
+      throw new Error(`Brevo responded with status ${response.status}`);
+    }
+  }
+}
+
+// "PingBoard <a@b.com>" превращается в { name, email }.
+function parseSender(from: string) {
+  const match = from.match(/^(.*)<(.+)>$/);
+  return match
+    ? { name: match[1].trim(), email: match[2].trim() }
+    : { email: from.trim() };
 }

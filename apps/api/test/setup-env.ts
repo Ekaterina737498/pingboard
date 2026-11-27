@@ -10,3 +10,4 @@ process.env.JWT_REFRESH_SECRET =
 process.env.RATE_LIMIT_ENABLED = 'false';
 // Тесты не должны отправлять настоящие письма, даже если в .env указан Gmail.
 process.env.SMTP_URL = 'smtp://127.0.0.1:1';
+process.env.BREVO_API_KEY = '';

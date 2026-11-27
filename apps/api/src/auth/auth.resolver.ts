@@ -21,6 +21,7 @@ type GqlContext = { req: Request; res: Response };
 
 const LOGIN_WINDOW_SECONDS = 15 * 60;
 const REGISTER_WINDOW_SECONDS = 60 * 60;
+const DAY_SECONDS = 24 * 60 * 60;
 
 @Resolver()
 export class AuthResolver {
@@ -38,6 +39,8 @@ export class AuthResolver {
   ) {
     const ip = ctx.req.ip ?? 'unknown';
     await this.rateLimit.hit(`rl:register:${ip}`, 5, REGISTER_WINDOW_SECONDS);
+    // Общий предел не зависит от IP: каждая регистрация отправляет письмо.
+    await this.rateLimit.hit('rl:register-all', 50, DAY_SECONDS);
     const user = await this.authService.register(input);
     await this.verification.request(user.id);
     return user;
@@ -50,9 +53,16 @@ export class AuthResolver {
 
     await this.rateLimit.hit(`rl:login-ip:${ip}`, 30, LOGIN_WINDOW_SECONDS);
     await this.rateLimit.hit(accountKey, 5, LOGIN_WINDOW_SECONDS);
+    // Ограничивает подбор пароля, даже если злоумышленник меняет IP.
+    await this.rateLimit.hit(
+      `rl:login-account:${input.email}`,
+      20,
+      LOGIN_WINDOW_SECONDS,
+    );
 
     const { accessToken, refreshToken } = await this.authService.login(input);
     await this.rateLimit.reset(accountKey);
+    await this.rateLimit.reset(`rl:login-account:${input.email}`);
     setRefreshCookie(ctx.res, refreshToken);
     return { accessToken };
   }
