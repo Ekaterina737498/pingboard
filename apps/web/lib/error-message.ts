@@ -2,6 +2,7 @@ export function getErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
 
   if (message === "Invalid credentials") return "Неверный email или пароль";
+  if (message === "Site not found") return "Сайт не найден";
   if (message === "Email is already registered") {
     return "Этот email уже зарегистрирован";
   }

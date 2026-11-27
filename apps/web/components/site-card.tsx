@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Site } from "@/lib/operations";
 
 type Props = {
@@ -33,7 +34,11 @@ export function SiteCard({ site, onRemove }: Props) {
   return (
     <div className="flex items-start justify-between gap-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
       <div className="min-w-0">
-        <h3 className="truncate font-semibold">{site.name}</h3>
+        <h3 className="truncate font-semibold">
+          <Link href={`/sites/${site.id}`} className="hover:underline">
+            {site.name}
+          </Link>
+        </h3>
         <p className="truncate text-sm opacity-60">{site.url}</p>
         <p className="mt-2 flex items-center gap-2 text-sm">
           <span aria-hidden className={`size-2 rounded-full ${status.dot}`} />

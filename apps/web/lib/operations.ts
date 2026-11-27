@@ -100,3 +100,38 @@ export const REMOVE_SITE: TypedDocumentNode<
     }
   }
 `;
+
+export type Check = {
+  id: string;
+  ok: boolean;
+  statusCode: number | null;
+  responseTimeMs: number | null;
+  error: string | null;
+  checkedAt: string;
+};
+
+export const SITE_PAGE: TypedDocumentNode<
+  {
+    site: { id: string; name: string; url: string };
+    siteUptime: number | null;
+    siteChecks: Check[];
+  },
+  { id: string }
+> = gql`
+  query SitePage($id: String!) {
+    site(id: $id) {
+      id
+      name
+      url
+    }
+    siteUptime(siteId: $id)
+    siteChecks(siteId: $id, limit: 50) {
+      id
+      ok
+      statusCode
+      responseTimeMs
+      error
+      checkedAt
+    }
+  }
+`;
