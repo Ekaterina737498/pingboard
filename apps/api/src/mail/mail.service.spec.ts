@@ -1,40 +1,68 @@
 import { ConfigService } from '@nestjs/config';
 import { MailService } from './mail.service';
 
-describe('MailService with the Brevo API', () => {
-  const values: Record<string, string> = {
-    BREVO_API_KEY: 'test-key',
-    MAIL_FROM: 'PingBoard <sender@example.com>',
-  };
+function createService(values: Record<string, string>) {
   const config = { get: (key: string) => values[key] };
-  const service = new MailService(config as unknown as ConfigService);
+  return new MailService(config as unknown as ConfigService);
+}
+
+describe('MailService with the mail script', () => {
+  const service = createService({
+    MAIL_SCRIPT_URL: 'https://script.example.com/exec',
+    MAIL_SCRIPT_SECRET: 'test-secret',
+  });
+  const send = () =>
+    service.sendEmailVerification('a@example.com', 'https://link');
 
   afterEach(() => jest.restoreAllMocks());
 
-  it('sends the message over HTTPS', async () => {
-    const fetchSpy = jest
+  function mockResponse(body: string, status = 200) {
+    return jest
       .spyOn(global, 'fetch')
-      .mockResolvedValue(new Response('{}', { status: 201 }));
+      .mockResolvedValue(new Response(body, { status }));
+  }
 
-    await service.sendEmailVerification('a@example.com', 'https://link');
+  it('sends the message over HTTPS', async () => {
+    const fetchSpy = mockResponse('{"ok":true}');
+
+    await send();
 
     const [url, init] = fetchSpy.mock.calls[0];
-    expect(url).toBe('https://api.brevo.com/v3/smtp/email');
-    expect(init?.headers).toMatchObject({ 'api-key': 'test-key' });
+    expect(url).toBe('https://script.example.com/exec');
+    expect(init?.method).toBe('POST');
     expect(JSON.parse(init?.body as string)).toMatchObject({
-      sender: { name: 'PingBoard', email: 'sender@example.com' },
-      to: [{ email: 'a@example.com' }],
+      secret: 'test-secret',
+      to: 'a@example.com',
       subject: 'Confirm your email for PingBoard',
     });
   });
 
-  it('throws on an error response, so the queue retries', async () => {
-    jest
-      .spyOn(global, 'fetch')
-      .mockResolvedValue(new Response('{}', { status: 401 }));
+  // Во всех этих случаях нужна ошибка, чтобы очередь повторила отправку.
+  it('throws on an error status', async () => {
+    mockResponse('{}', 500);
 
-    await expect(
-      service.sendEmailVerification('a@example.com', 'https://link'),
-    ).rejects.toThrow('Brevo responded with status 401');
+    await expect(send()).rejects.toThrow(
+      'Mail script responded with status 500',
+    );
+  });
+
+  it('throws when the script reports an error with status 200', async () => {
+    mockResponse('{"ok":false,"error":"unauthorized"}');
+
+    await expect(send()).rejects.toThrow('Mail script failed: unauthorized');
+  });
+
+  it('throws when the response is not JSON', async () => {
+    mockResponse('<html>Sign in</html>');
+
+    await expect(send()).rejects.toThrow(
+      'Mail script failed: invalid response',
+    );
+  });
+
+  it('requires the secret together with the URL', () => {
+    expect(() =>
+      createService({ MAIL_SCRIPT_URL: 'https://script.example.com/exec' }),
+    ).toThrow('MAIL_SCRIPT_SECRET is required');
   });
 });
