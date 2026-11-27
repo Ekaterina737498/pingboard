@@ -6,9 +6,11 @@ import { AuthService } from './auth.service';
 import { GqlAuthGuard } from './gql-auth.guard';
 import { GoogleAuthController } from './google-auth.controller';
 import { GoogleOAuthService } from './google-oauth.service';
+import { EmailVerificationModule } from '../email-verification/email-verification.module';
 
 @Module({
   imports: [
+    EmailVerificationModule,
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],
