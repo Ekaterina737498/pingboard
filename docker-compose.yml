@@ -40,6 +40,9 @@ services:
       DATABASE_URL: postgresql://pingboard:pingboard@postgres:5432/pingboard
       REDIS_URL: redis://redis:6379
       SMTP_URL: ${SMTP_URL:-smtp://mailpit:1025}
+      WEB_URL: http://localhost:3000
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       MAIL_FROM: "${MAIL_FROM:-PingBoard <alerts@pingboard.local>}"
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in the root .env}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in the root .env}
