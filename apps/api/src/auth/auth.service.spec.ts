@@ -189,6 +189,70 @@ describe('AuthService', () => {
     });
   });
 
+  describe('loginWithGoogle', () => {
+    const profile = {
+      googleId: 'g-1',
+      email: 'a@gmail.com',
+      authoritative: true,
+    };
+    const existing = {
+      id: '1',
+      role: 'USER',
+      isBlocked: false,
+      googleId: null,
+    };
+
+    beforeEach(() => jwtMock.signAsync.mockResolvedValue('token'));
+
+    it('creates a user without a password', async () => {
+      prismaMock.user.findUnique.mockResolvedValue(null);
+      prismaMock.user.create.mockResolvedValue(existing);
+
+      await service.loginWithGoogle(profile);
+
+      expect(prismaMock.user.create).toHaveBeenCalledWith({
+        data: { email: 'a@gmail.com', googleId: 'g-1' },
+      });
+    });
+
+    it('removes the old password when linking an account', async () => {
+      prismaMock.user.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(existing);
+      prismaMock.user.update.mockResolvedValue(existing);
+
+      await service.loginWithGoogle(profile);
+
+      expect(prismaMock.user.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: { googleId: 'g-1', passwordHash: null },
+      });
+    });
+
+    it('does not link when Google is not authoritative', async () => {
+      prismaMock.user.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(existing);
+
+      await expect(
+        service.loginWithGoogle({ ...profile, authoritative: false }),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects a blocked user', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({
+        ...existing,
+        isBlocked: true,
+      });
+
+      await expect(service.loginWithGoogle(profile)).rejects.toBeInstanceOf(
+        UnauthorizedException,
+      );
+      expect(jwtMock.signAsync).not.toHaveBeenCalled();
+    });
+  });
+
   describe('logout', () => {
     it('clears the stored refresh token hash', async () => {
       jwtMock.verifyAsync.mockResolvedValue({ sub: '1' });

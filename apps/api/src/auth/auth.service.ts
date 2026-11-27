@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { createHash, randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma.service';
+import type { GoogleProfile } from './google-oauth.service';
 import { LoginInput } from './login.input';
 import { REFRESH_TTL_SECONDS } from './refresh-cookie';
 import { RegisterInput } from './register.input';
@@ -42,7 +43,8 @@ export class AuthService {
       where: { email: input.email },
     });
 
-    const passwordOk = user
+    // У аккаунта, созданного через Google, пароля нет.
+    const passwordOk = user?.passwordHash
       ? await bcrypt.compare(input.password, user.passwordHash)
       : false;
 
@@ -50,6 +52,34 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     return this.issueTokens(user);
+  }
+
+  async loginWithGoogle({ googleId, email, authoritative }: GoogleProfile) {
+    const linked = await this.prisma.user.findUnique({ where: { googleId } });
+    if (linked) {
+      this.assertNotBlocked(linked);
+      return this.issueTokens(linked);
+    }
+
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (!existing) {
+      const created = await this.prisma.user.create({
+        data: { email, googleId },
+      });
+      return this.issueTokens(created);
+    }
+
+    this.assertNotBlocked(existing);
+    if (!authoritative || existing.googleId) {
+      throw new ConflictException('Cannot link this Google account');
+    }
+    // Email при регистрации не подтверждался: пароль мог задать посторонний.
+    // Поэтому удаляем его, а issueTokens заменяет прежнюю сессию новой.
+    const updated = await this.prisma.user.update({
+      where: { id: existing.id },
+      data: { googleId, passwordHash: null },
+    });
+    return this.issueTokens(updated);
   }
 
   async refresh(refreshToken: string | undefined) {
@@ -97,6 +127,12 @@ export class AuthService {
       });
     } catch {
       return;
+    }
+  }
+
+  private assertNotBlocked(user: { isBlocked: boolean }) {
+    if (user.isBlocked) {
+      throw new UnauthorizedException();
     }
   }
 

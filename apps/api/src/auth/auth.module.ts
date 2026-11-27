@@ -4,6 +4,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthResolver } from './auth.resolver';
 import { AuthService } from './auth.service';
 import { GqlAuthGuard } from './gql-auth.guard';
+import { GoogleAuthController } from './google-auth.controller';
+import { GoogleOAuthService } from './google-oauth.service';
 
 @Module({
   imports: [
@@ -16,7 +18,8 @@ import { GqlAuthGuard } from './gql-auth.guard';
       }),
     }),
   ],
-  providers: [AuthService, AuthResolver, GqlAuthGuard],
+  controllers: [GoogleAuthController],
+  providers: [AuthService, AuthResolver, GqlAuthGuard, GoogleOAuthService],
   exports: [GqlAuthGuard],
 })
 export class AuthModule {}

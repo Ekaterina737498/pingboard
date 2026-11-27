@@ -22,11 +22,15 @@ export function clearRefreshCookie(res: Response) {
 }
 
 export function readRefreshCookie(req: Request): string | undefined {
+  return readCookie(req, REFRESH_COOKIE);
+}
+
+export function readCookie(req: Request, name: string): string | undefined {
   const header = req.headers.cookie;
   if (!header) return undefined;
   for (const part of header.split(';')) {
     const [key, ...rest] = part.trim().split('=');
-    if (key === REFRESH_COOKIE) {
+    if (key === name) {
       return decodeURIComponent(rest.join('='));
     }
   }

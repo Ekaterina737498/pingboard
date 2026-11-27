@@ -3,7 +3,7 @@
 import { useApolloClient, useMutation } from "@apollo/client/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "motion/react";
 import { sessionStarted } from "@/lib/auth-slice";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/schemas";
 import { useAppDispatch } from "@/lib/store";
 import { FormError } from "./form-error";
+import { GoogleSignIn } from "./google-sign-in";
 import { fadeUp } from "./motion-presets";
 import { TextField } from "./text-field";
 
@@ -105,6 +106,11 @@ export function AuthForm({ mode }: { mode: keyof typeof TEXT }) {
           {isSubmitting ? "Подождите…" : text.submit}
         </button>
       </form>
+
+      {/* useSearchParams внутри требует границу Suspense. */}
+      <Suspense>
+        <GoogleSignIn />
+      </Suspense>
 
       <p className="mt-4 text-sm">
         {text.question}{" "}
