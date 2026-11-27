@@ -13,6 +13,7 @@ import { SitesModule } from './sites/sites.module';
 import { BullModule } from '@nestjs/bullmq';
 import { ChecksModule } from './checks/checks.module';
 import { RedisModule } from './redis/redis.module';
+import { parseRedisUrl } from './redis/redis-connection';
 
 @Module({
   imports: [
@@ -32,17 +33,11 @@ import { RedisModule } from './redis/redis.module';
     SitesModule,
     BullModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const redis = new URL(
+      useFactory: (config: ConfigService) => ({
+        connection: parseRedisUrl(
           config.get<string>('REDIS_URL') ?? 'redis://localhost:6379',
-        );
-        return {
-          connection: {
-            host: redis.hostname,
-            port: Number(redis.port || 6379),
-          },
-        };
-      },
+        ),
+      }),
     }),
     ChecksModule,
     RedisModule,
