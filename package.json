@@ -1,7 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "predev": "docker compose up -d --wait postgres redis mailpit && docker compose stop api",
+    "start:docker": "docker compose --profile app up -d --build --wait",
+    "stop:docker": "docker compose --profile app stop",
+    "predev": "docker compose up -d --wait postgres redis mailpit && docker compose stop api web",
     "dev": "concurrently -k -n api,web -c blue,green \"npm run start:dev --prefix apps/api\" \"npm run dev --prefix apps/web\""
   },
   "devDependencies": {
