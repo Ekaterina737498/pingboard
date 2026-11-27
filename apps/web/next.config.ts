@@ -6,7 +6,14 @@ const apiUrl = process.env.API_URL ?? "http://localhost:4000";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    return [{ source: "/graphql", destination: `${apiUrl}/graphql` }];
+    return [
+      { source: "/graphql", destination: `${apiUrl}/graphql` },
+      // Вход через Google тоже идёт через адрес сайта: там будет refresh-cookie.
+      {
+        source: "/auth/google/:path*",
+        destination: `${apiUrl}/auth/google/:path*`,
+      },
+    ];
   },
   /* config options here */
   cacheComponents: true,
