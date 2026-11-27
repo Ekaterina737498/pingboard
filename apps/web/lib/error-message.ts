@@ -3,6 +3,9 @@ export function getErrorMessage(error: unknown): string {
 
   if (message === "Invalid credentials") return "Неверный email или пароль";
   if (message === "Site not found") return "Сайт не найден";
+  if (message === "Invalid or expired verification link") {
+    return "Ссылка недействительна или уже использована";
+  }
   if (message === "Email is already registered") {
     return "Этот email уже зарегистрирован";
   }

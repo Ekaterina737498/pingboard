@@ -9,7 +9,7 @@ import { refreshAccessToken } from "./refresh";
 import type { AppStore } from "./store";
 
 // Для этих операций ошибка входа не означает, что пора обновить токен.
-const PUBLIC_OPERATIONS = ["Login", "Register", "Logout"];
+const PUBLIC_OPERATIONS = ["Login", "Register", "Logout", "VerifyEmail"];
 
 export function makeApolloClient(store: AppStore) {
   const errorLink = new ErrorLink(({ error, operation, forward }) => {

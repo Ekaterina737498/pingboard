@@ -34,7 +34,14 @@ export const LOGOUT: TypedDocumentNode<
 `;
 
 export const ME: TypedDocumentNode<
-  { me: { id: string; email: string; role: string } },
+  {
+    me: {
+      id: string;
+      email: string;
+      role: string;
+      emailVerifiedAt: string | null;
+    };
+  },
   Record<string, never>
 > = gql`
   query Me {
@@ -42,7 +49,26 @@ export const ME: TypedDocumentNode<
       id
       email
       role
+      emailVerifiedAt
     }
+  }
+`;
+
+export const VERIFY_EMAIL: TypedDocumentNode<
+  { verifyEmail: boolean },
+  { token: string }
+> = gql`
+  mutation VerifyEmail($token: String!) {
+    verifyEmail(token: $token)
+  }
+`;
+
+export const RESEND_VERIFICATION: TypedDocumentNode<
+  { resendVerificationEmail: boolean },
+  Record<string, never>
+> = gql`
+  mutation ResendVerification {
+    resendVerificationEmail
   }
 `;
 
